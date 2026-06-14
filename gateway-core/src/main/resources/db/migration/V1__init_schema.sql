@@ -1,0 +1,18 @@
+CREATE TABLE tenants (
+    id UUID PRIMARY KEY,
+    api_key VARCHAR(255) NOT NULL UNIQUE,
+    rate_limit_quota INT NOT NULL DEFAULT 100,
+    rate_limit_replenish_rate INT NOT NULL DEFAULT 10,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE tenant_plugins (
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    plugin_id VARCHAR(255) NOT NULL,
+    is_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    config_json JSONB,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (tenant_id, plugin_id)
+);
