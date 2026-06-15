@@ -27,9 +27,16 @@ public class TenantService {
 
     @Transactional
     public TenantResponse createTenant(CreateTenantRequest request) {
-        Tenant tenant = new Tenant(UUID.randomUUID(), request.apiKey(), request.rateLimitQuota(), request.rateLimitReplenishRate());
+        String generatedApiKey = generateApiKey();
+        Tenant tenant = new Tenant(UUID.randomUUID(), generatedApiKey, request.rateLimitQuota(), request.rateLimitReplenishRate());
         tenantRepository.save(tenant);
         return mapToResponse(tenant);
+    }
+
+    private String generateApiKey() {
+        byte[] randomBytes = new byte[32];
+        new java.security.SecureRandom().nextBytes(randomBytes);
+        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
     }
 
     @Transactional
