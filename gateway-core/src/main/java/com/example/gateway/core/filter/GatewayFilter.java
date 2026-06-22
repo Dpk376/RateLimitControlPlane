@@ -6,6 +6,7 @@ import com.example.gateway.core.ratelimit.RedisRateLimiterService;
 import com.example.gateway.core.registry.PluginRegistry;
 import com.example.gateway.core.repository.TenantPluginRepository;
 import com.example.gateway.core.repository.TenantRepository;
+import com.example.gateway.core.security.ApiKeyHasher;
 import com.example.gateway.plugin.ApiGatewayPlugin;
 import com.example.gateway.plugin.RequestContext;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -62,7 +63,8 @@ public class GatewayFilter implements Filter {
             return;
         }
 
-        Optional<Tenant> tenantOpt = tenantRepository.findByApiKey(apiKey);
+        String hashedApiKey = ApiKeyHasher.hash(apiKey);
+        Optional<Tenant> tenantOpt = tenantRepository.findByApiKey(hashedApiKey);
         if (tenantOpt.isEmpty()) {
             httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             httpResponse.getWriter().write("Invalid API Key");

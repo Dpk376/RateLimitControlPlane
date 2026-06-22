@@ -9,6 +9,7 @@ import com.example.gateway.core.entity.TenantPlugin;
 import com.example.gateway.core.entity.TenantPluginId;
 import com.example.gateway.core.repository.TenantRepository;
 import com.example.gateway.core.repository.TenantPluginRepository;
+import com.example.gateway.core.security.ApiKeyHasher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,9 +29,10 @@ public class TenantService {
     @Transactional
     public TenantResponse createTenant(CreateTenantRequest request) {
         String generatedApiKey = generateApiKey();
-        Tenant tenant = new Tenant(UUID.randomUUID(), generatedApiKey, request.rateLimitQuota(), request.rateLimitReplenishRate());
+        String hashedApiKey = ApiKeyHasher.hash(generatedApiKey);
+        Tenant tenant = new Tenant(UUID.randomUUID(), hashedApiKey, request.rateLimitQuota(), request.rateLimitReplenishRate());
         tenantRepository.save(tenant);
-        return mapToResponse(tenant);
+        return new TenantResponse(tenant.getId(), generatedApiKey, tenant.getRateLimitQuota(), tenant.getRateLimitReplenishRate());
     }
 
     private String generateApiKey() {
@@ -64,6 +66,6 @@ public class TenantService {
     }
 
     private TenantResponse mapToResponse(Tenant tenant) {
-        return new TenantResponse(tenant.getId(), tenant.getApiKey(), tenant.getRateLimitQuota(), tenant.getRateLimitReplenishRate());
+        return new TenantResponse(tenant.getId(), "***", tenant.getRateLimitQuota(), tenant.getRateLimitReplenishRate());
     }
 }
