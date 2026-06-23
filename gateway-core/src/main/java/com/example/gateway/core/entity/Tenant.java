@@ -23,6 +23,9 @@ public class Tenant {
     @Column(name = "rate_limit_replenish_rate", nullable = false)
     private int rateLimitReplenishRate;
 
+    @Column(name = "downstream_url", nullable = false)
+    private String downstreamUrl;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -31,11 +34,12 @@ public class Tenant {
 
     public Tenant() {}
 
-    public Tenant(UUID id, String apiKey, int rateLimitQuota, int rateLimitReplenishRate) {
+    public Tenant(UUID id, String apiKey, int rateLimitQuota, int rateLimitReplenishRate, String downstreamUrl) {
         this.id = id;
         this.apiKey = apiKey;
         this.rateLimitQuota = rateLimitQuota;
         this.rateLimitReplenishRate = rateLimitReplenishRate;
+        this.downstreamUrl = downstreamUrl;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
@@ -46,6 +50,8 @@ public class Tenant {
     public void setRateLimitQuota(int rateLimitQuota) { this.rateLimitQuota = rateLimitQuota; }
     public int getRateLimitReplenishRate() { return rateLimitReplenishRate; }
     public void setRateLimitReplenishRate(int rateLimitReplenishRate) { this.rateLimitReplenishRate = rateLimitReplenishRate; }
+    public String getDownstreamUrl() { return downstreamUrl; }
+    public void setDownstreamUrl(String downstreamUrl) { this.downstreamUrl = downstreamUrl; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }

@@ -97,6 +97,9 @@ public class GatewayFilter implements Filter {
         }
         RequestContext context = new RequestContext(httpRequest.getMethod(), path, headers);
 
+        // Expose downstream URL to request attributes for the proxy controller
+        httpRequest.setAttribute("downstream_url", tenant.getDownstreamUrl());
+
         // Get enabled plugins for tenant
         List<TenantPlugin> enabledPlugins = tenantPluginRepository.findByTenantIdAndIsEnabledTrue(tenant.getId());
         List<ApiGatewayPlugin> activePlugins = new ArrayList<>();
@@ -118,8 +121,14 @@ public class GatewayFilter implements Filter {
         }
 
         try {
+            // Create mutable wrapper so proxy sees injected headers
+            MutableHttpServletRequest mutableRequest = new MutableHttpServletRequest(httpRequest);
+            for (Map.Entry<String, String> entry : context.getHeaders().entrySet()) {
+                mutableRequest.putHeader(entry.getKey(), entry.getValue());
+            }
+
             // Execute Core Logic
-            chain.doFilter(request, response);
+            chain.doFilter(mutableRequest, response);
         } finally {
             context.setResponseStatus(httpResponse.getStatus());
             
@@ -130,7 +139,7 @@ public class GatewayFilter implements Filter {
                 sample.stop(meterRegistry.timer("gateway_plugin_execution_time_seconds", "plugin", plugin.getPluginId(), "phase", "post"));
             }
 
-            // Apply mutated headers to response (Note: this is simplified, in a real gateway we'd wrap the HttpServletResponse)
+            // Apply mutated headers to response
             for (Map.Entry<String, String> entry : context.getHeaders().entrySet()) {
                 if (entry.getKey().startsWith("X-Gateway-")) {
                     httpResponse.setHeader(entry.getKey(), entry.getValue());

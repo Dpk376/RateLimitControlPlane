@@ -30,9 +30,10 @@ public class TenantService {
     public TenantResponse createTenant(CreateTenantRequest request) {
         String generatedApiKey = generateApiKey();
         String hashedApiKey = ApiKeyHasher.hash(generatedApiKey);
-        Tenant tenant = new Tenant(UUID.randomUUID(), hashedApiKey, request.rateLimitQuota(), request.rateLimitReplenishRate());
+        String downstreamUrl = request.downstreamUrl() != null ? request.downstreamUrl() : "http://localhost:8080/api/service";
+        Tenant tenant = new Tenant(UUID.randomUUID(), hashedApiKey, request.rateLimitQuota(), request.rateLimitReplenishRate(), downstreamUrl);
         tenantRepository.save(tenant);
-        return new TenantResponse(tenant.getId(), generatedApiKey, tenant.getRateLimitQuota(), tenant.getRateLimitReplenishRate());
+        return new TenantResponse(tenant.getId(), generatedApiKey, tenant.getRateLimitQuota(), tenant.getRateLimitReplenishRate(), tenant.getDownstreamUrl());
     }
 
     private String generateApiKey() {
@@ -66,6 +67,6 @@ public class TenantService {
     }
 
     private TenantResponse mapToResponse(Tenant tenant) {
-        return new TenantResponse(tenant.getId(), "***", tenant.getRateLimitQuota(), tenant.getRateLimitReplenishRate());
+        return new TenantResponse(tenant.getId(), "***", tenant.getRateLimitQuota(), tenant.getRateLimitReplenishRate(), tenant.getDownstreamUrl());
     }
 }
