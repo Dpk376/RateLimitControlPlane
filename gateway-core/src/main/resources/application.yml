@@ -25,3 +25,17 @@ management:
 
 gateway:
   plugin-dir: ./plugins
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      downstream:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10000
+        permittedNumberOfCallsInHalfOpenState: 3
+  retry:
+    instances:
+      downstream:
+        maxAttempts: 2
+        waitDuration: 500

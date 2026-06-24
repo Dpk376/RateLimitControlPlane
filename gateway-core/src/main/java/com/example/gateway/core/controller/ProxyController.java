@@ -7,10 +7,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.InputStream;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
@@ -18,13 +16,10 @@ import java.util.Map;
 @RestController
 public class ProxyController {
 
-    private final HttpClient httpClient;
+    private final com.example.gateway.core.service.ProxyService proxyService;
 
-    public ProxyController() {
-        this.httpClient = HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_2)
-                .connectTimeout(Duration.ofSeconds(10))
-                .build();
+    public ProxyController(com.example.gateway.core.service.ProxyService proxyService) {
+        this.proxyService = proxyService;
     }
 
     @RequestMapping("/**")
@@ -69,20 +64,24 @@ public class ProxyController {
 
         HttpRequest httpRequest = requestBuilder.build();
 
-        HttpResponse<InputStream> httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofInputStream());
+        try {
+            HttpResponse<InputStream> httpResponse = proxyService.forwardRequest(httpRequest);
 
-        response.setStatus(httpResponse.statusCode());
-        for (Map.Entry<String, List<String>> header : httpResponse.headers().map().entrySet()) {
-            if (isRestrictedHeader(header.getKey())) {
-                continue;
+            response.setStatus(httpResponse.statusCode());
+            for (Map.Entry<String, List<String>> header : httpResponse.headers().map().entrySet()) {
+                if (isRestrictedHeader(header.getKey())) {
+                    continue;
+                }
+                for (String val : header.getValue()) {
+                    response.addHeader(header.getKey(), val);
+                }
             }
-            for (String val : header.getValue()) {
-                response.addHeader(header.getKey(), val);
-            }
-        }
 
-        try (InputStream body = httpResponse.body()) {
-            body.transferTo(response.getOutputStream());
+            try (InputStream body = httpResponse.body()) {
+                body.transferTo(response.getOutputStream());
+            }
+        } catch (io.github.resilience4j.circuitbreaker.CallNotPermittedException e) {
+            response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Downstream service is temporarily unavailable");
         }
     }
 
